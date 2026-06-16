@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Swing">
+<title>Swing Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0d1117; color: #e2e8f0; font-family: -apple-system, 'SF Pro Display', sans-serif; min-height: 100vh; padding-bottom: 40px; }
+  .header { background: #0d1117; border-bottom: 1px solid #1e2535; padding: 52px 16px 12px; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .header-row { display: flex; justify-content: space-between; align-items: center; }
+  .header-sub { font-size: 10px; color: #475569; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
+  .header-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg,#6366f1,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .refresh-btn { background: #1a1f2e; border: 1px solid #2a3148; border-radius: 10px; padding: 8px 14px; color: #94a3b8; font-size: 18px; cursor: pointer; line-height: 1; }
+  .refresh-btn:disabled { color: #334155; }
+  .content { padding: 0 16px; }
+  .fg-card { background: #1a1f2e; border-radius: 16px; padding: 16px 14px; margin-top: 16px; border: 1px solid #252d40; }
+  .fg-value { text-align: center; margin-top: 4px; }
+  .fg-number { font-size: 40px; font-weight: 900; line-height: 1; }
+  .fg-label { font-size: 14px; font-weight: 700; margin-top: 2px; }
+  .fg-prev { font-size: 11px; color: #475569; margin-top: 2px; }
+  .fg-action { margin-top: 12px; border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .fg-action-sub { font-size: 10px; color: #64748b; }
+  .fg-action-label { font-size: 15px; font-weight: 800; }
+  .section-label { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin: 14px 0 8px; }
+  .weekend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .weekend-card { background: #1a1f2e; border-radius: 12px; padding: 10px 12px; border: 1px solid #252d40; }
+  .weekend-title { font-size: 10px; color: #475569; font-weight: 600; margin-bottom: 6px; }
+  .weekend-prices { display: flex; gap: 6px; margin-bottom: 4px; }
+  .weekend-price-box { flex: 1; border-radius: 6px; padding: 4px 6px; }
+  .weekend-price-label { font-size: 9px; }
+  .weekend-price-val { font-size: 12px; font-weight: 700; color: #e2e8f0; }
+  .weekend-sell { background: #ef444418; } .weekend-sell .weekend-price-label { color: #ef4444; }
+  .weekend-buy  { background: #22c55e18; } .weekend-buy  .weekend-price-label { color: #22c55e; }
+  .weekend-change { font-size: 13px; font-weight: 700; }
+  .weekend-hl { font-size: 10px; color: #334155; margin-top: 2px; }
+  .tabs { display: flex; gap: 6px; margin-top: 18px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; border-radius: 8px; padding: 7px 12px; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; border: 1px solid #252d40; background: #1a1f2e; color: #64748b; }
+  .tab-btn.active { background: #6366f1; border-color: #6366f1; color: #fff; font-weight: 700; }
+  .tab-btn.active.moat { background: #f97316; border-color: #f97316; }
+  .tab-btn.active.depot { background: #8b5cf6; border-color: #8b5cf6; }
+  .moat-header { margin-top: 10px; background: #f9731618; border: 1px solid #f9731633; border-radius: 10px; padding: 10px 14px; }
+  .moat-header-title { font-size: 12px; color: #f97316; font-weight: 700; margin-bottom: 2px; }
+  .moat-header-sub { font-size: 11px; color: #64748b; }
+  .depot-header { margin-top: 10px; background: #8b5cf618; border: 1px solid #8b5cf633; border-radius: 10px; padding: 10px 14px; }
+  .depot-header-title { font-size: 12px; color: #8b5cf6; font-weight: 700; margin-bottom: 2px; }
+  .depot-header-sub { font-size: 11px; color: #64748b; }
+  .summary { display: flex; gap: 8px; margin-top: 10px; }
+  .summary-item { flex: 1; border-radius: 10px; padding: 8px 6px; text-align: center; }
+  .summary-count { font-size: 20px; font-weight: 800; }
+  .summary-label { font-size: 10px; color: #475569; margin-top: 1px; }
+  .stocks { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .stock-card { background: #1a1f2e; border-radius: 12px; padding: 12px 14px; border: 1px solid #252d40; }
+  .stock-card.buy-signal { border-color: #22c55e44; }
+  .stock-card.sell-signal { border-color: #ef444444; }
+  .stock-card.hot-score { border-color: #f9731644; }
+  .stock-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .stock-meta { font-size: 10px; color: #475569; margin-bottom: 1px; }
+  .stock-rank { color: #6366f1; font-weight: 700; margin-right: 4px; }
+  .stock-name { color: #e2e8f0; font-weight: 700; font-size: 14px; }
+  .stock-price { color: #94a3b8; font-size: 12px; margin-top: 2px; }
+  .stock-right { text-align: right; min-width: 80px; }
+  .stock-change { font-weight: 700; font-size: 13px; }
+  .stock-change.pos { color: #22c55e; } .stock-change.neg { color: #ef4444; }
+  .stock-signal { margin-top: 4px; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 2px 6px; display: inline-block; }
+  .stock-score { margin-top: 4px; font-size: 11px; font-weight: 700; }
+  .stock-indicators { display: flex; gap: 10px; margin-top: 6px; font-size: 11px; color: #475569; flex-wrap: wrap; }
+  .rsi-low { color: #22c55e; } .rsi-high { color: #ef4444; } .rsi-mid { color: #94a3b8; }
+  .legend { margin-top: 18px; background: #1a1f2e; border-radius: 12px; padding: 12px 14px; border: 1px solid #252d40; }
+  .legend-title { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .legend-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .legend-sig { font-weight: 700; } .legend-desc { color: #475569; }
+  .legend-moat { margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e2535; font-size: 11px; color: #64748b; }
+  .timestamp { text-align: center; font-size: 11px; color: #1e2535; margin-top: 14px; }
+  .error-msg { background: #ef444418; border: 1px solid #ef444433; border-radius: 12px; padding: 14px; margin: 16px 0; color: #fca5a5; font-size: 13px; text-align: center; }
+  .loading-msg { text-align: center; color: #334155; padding: 24px 0; font-size: 14px; }
+  .placeholder { color: #334155; font-size: 12px; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-row">
+    <div>
+      <div class="header-sub">Swing Dashboard · MSCI ACWI</div>
+      <div class="header-title">Fear &amp; Greed · Watchlist</div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻</button>
+  </div>
+</div>
+<div class="content">
+  <div class="fg-card" id="fgCard"><div class="loading-msg">Lade Daten…</div></div>
+  <div class="section-label" id="weekendLabel">Weekend Index</div>
+  <div class="weekend-grid" id="weekendGrid">
+    <div class="weekend-card" style="opacity:0.5"><div class="weekend-title">Nasdaq 100</div><div class="placeholder">…</div></div>
+    <div class="weekend-card" style="opacity:0.5"><div class="weekend-title">DAX 40</div><div class="placeholder">…</div></div>
+    <div class="weekend-card" style="opacity:0.5"><div class="weekend-title">Gold</div><div class="placeholder">…</div></div>
+    <div class="weekend-card" style="opacity:0.5"><div class="weekend-title">WTI Crude</div><div class="placeholder">…</div></div>
+  </div>
+  <div class="tabs" id="tabsRow"></div>
+  <div class="moat-header" id="moatHeader" style="display:none">
+    <div class="moat-header-title">🏰 Burggraben · 52W-Tief Radar</div>
+    <div class="moat-header-sub">Top 10 nach Score · Nähe zum 52W-Tief + RSI + Tagesperformance</div>
+  </div>
+  <div class="depot-header" id="depotHeader" style="display:none">
+    <div class="depot-header-title">📊 Mein Depot · Scalable Capital</div>
+    <div class="depot-header-sub">Alle Positionen · Signal basierend auf Fear &amp; Greed + RSI</div>
+  </div>
+  <div class="summary" id="summaryBar" style="display:none"></div>
+  <div class="stocks" id="stockList"></div>
+  <div class="legend">
+    <div class="legend-title">Signal-Logik</div>
+    <div class="legend-row"><span class="legend-sig" style="color:#22c55e">KAUFEN</span><span class="legend-desc">F&amp;G ≤25 + RSI &lt;40</span></div>
+    <div class="legend-row"><span class="legend-sig" style="color:#eab308">BEOBACHTEN</span><span class="legend-desc">F&amp;G ≤35 + RSI &lt;45</span></div>
+    <div class="legend-row"><span class="legend-sig" style="color:#64748b">WARTEN</span><span class="legend-desc">Keine klare Zone</span></div>
+    <div class="legend-row"><span class="legend-sig" style="color:#84cc16">TEILVERKAUF</span><span class="legend-desc">F&amp;G ≥60 + RSI &gt;60</span></div>
+    <div class="legend-row"><span class="legend-sig" style="color:#ef4444">VERKAUFEN</span><span class="legend-desc">F&amp;G ≥75 + RSI &gt;65</span></div>
+    <div class="legend-moat" id="moatLegend" style="display:none">🏰 Score 0–100 · &gt;60 = attraktive Einstiegszone</div>
+  </div>
+  <div class="timestamp" id="timestamp"></div>
+</div>
+
+<script>
+const FEAR_ZONES = [
+  {min:0,  max:25, label:"Extreme Fear",  color:"#ef4444", action:"KAUFEN",      emoji:"🟢"},
+  {min:25, max:45, label:"Fear",           color:"#f97316", action:"BEOBACHTEN",  emoji:"👀"},
+  {min:45, max:55, label:"Neutral",        color:"#eab308", action:"WARTEN",      emoji:"⏳"},
+  {min:55, max:75, label:"Greed",          color:"#84cc16", action:"TEILVERKAUF", emoji:"💰"},
+  {min:75, max:100,label:"Extreme Greed", color:"#22c55e", action:"VERKAUFEN",   emoji:"🔴"},
+];
+const SIG_COLORS = {KAUFEN:"#22c55e",BEOBACHTEN:"#eab308",WARTEN:"#64748b",TEILVERKAUF:"#84cc16",VERKAUFEN:"#ef4444"};
+
+const REGIONS = {
+  depot: { label:"📊 Mein Depot", stocks:[
+    {t:"IWDA.AS",   n:"iShares MSCI ACWI",       c:"ETF",  w:"ETF"},
+    {t:"AIR.PA",    n:"Airbus",                   c:"FR",   w:"Luft"},
+    {t:"LOCK.L",    n:"iShares Digital Security", c:"ETF",  w:"ETF"},
+    {t:"ALV.DE",    n:"Allianz",                  c:"DE",   w:"Vers."},
+    {t:"V",         n:"Visa",                     c:"USA",  w:"Pay"},
+    {t:"LIN",       n:"Linde",                    c:"DE",   w:"Chem."},
+    {t:"DIS",       n:"Walt Disney",              c:"USA",  w:"Media"},
+    {t:"DTE.DE",    n:"Deutsche Telekom",         c:"DE",   w:"Telco"},
+    {t:"VWRL.AS",   n:"Vanguard FTSE All-World",  c:"ETF",  w:"ETF"},
+    {t:"MTX.DE",    n:"MTU Aero Engines",         c:"DE",   w:"Aero"},
+    {t:"ADS.DE",    n:"Adidas",                   c:"DE",   w:"Sport"},
+    {t:"NKE",       n:"Nike",                     c:"USA",  w:"Sport"},
+    {t:"BOSS.DE",   n:"Hugo Boss",                c:"DE",   w:"Mode"},
+    {t:"MC.PA",     n:"LVMH",                     c:"FR",   w:"Luxus"},
+    {t:"VNA.DE",    n:"Vonovia",                  c:"DE",   w:"Immo"},
+    {t:"NVO",       n:"Novo Nordisk",             c:"DK",   w:"Pharma"},
+    {t:"BA",        n:"Boeing",                   c:"USA",  w:"Aero"},
+    {t:"KDP",       n:"Keurig Dr Pepper",         c:"USA",  w:"FMCG"},
+    {t:"XYL",       n:"Xylem",                    c:"USA",  w:"Wasser"},
+    {t:"ECL",       n:"Ecolab",                   c:"USA",  w:"Chemie"},
+    {t:"NEE",       n:"NextEra Energy",           c:"USA",  w:"Energy"},
+    {t:"CARBIOS.PA",n:"Carbios",                  c:"FR",   w:"Green"},
+    {t:"TUI1.DE",   n:"TUI",                      c:"DE",   w:"Travel"},
+  ]},
+  usa: { label:"🇺🇸 USA", stocks:[
+    {t:"NVDA",  n:"NVIDIA",       c:"USA", w:"~7.6%"},
+    {t:"AAPL",  n:"Apple",        c:"USA", w:"~7.0%"},
+    {t:"MSFT",  n:"Microsoft",    c:"USA", w:"~4.6%"},
+    {t:"AMZN",  n:"Amazon",       c:"USA", w:"~3.7%"},
+    {t:"GOOGL", n:"Alphabet",     c:"USA", w:"~3.3%"},
+    {t:"META",  n:"Meta",         c:"USA", w:"~2.8%"},
+    {t:"AVGO",  n:"Broadcom",     c:"USA", w:"~2.1%"},
+    {t:"TSLA",  n:"Tesla",        c:"USA", w:"~2.0%"},
+    {t:"BRK-B", n:"Berkshire",    c:"USA", w:"~1.5%"},
+    {t:"LLY",   n:"Eli Lilly",    c:"USA", w:"~1.4%"},
+  ]},
+  europe: { label:"🇪🇺 Europa", stocks:[
+    {t:"ASML",   n:"ASML",          c:"NL", w:"~1.57%"},
+    {t:"AZN",    n:"AstraZeneca",   c:"UK", w:"~0.89%"},
+    {t:"SHEL",   n:"Shell",         c:"UK", w:"~0.95%"},
+    {t:"HSBC",   n:"HSBC",          c:"UK", w:"~0.93%"},
+    {t:"MC.PA",  n:"LVMH",          c:"FR", w:"~0.72%"},
+    {t:"SAP",    n:"SAP",           c:"DE", w:"~0.68%"},
+    {t:"SIE.DE", n:"Siemens",       c:"DE", w:"~0.55%"},
+    {t:"AIR.PA", n:"Airbus",        c:"FR", w:"~0.45%"},
+    {t:"TTE",    n:"TotalEnergies", c:"FR", w:"~0.42%"},
+    {t:"SNY",    n:"Sanofi",        c:"FR", w:"~0.38%"},
+  ]},
+  swiss: { label:"🇨🇭 Schweiz", stocks:[
+    {t:"NESN.SW", n:"Nestlé",          c:"CH", w:"Top 1"},
+    {t:"NOVN.SW", n:"Novartis",        c:"CH", w:"Top 2"},
+    {t:"ROG.SW",  n:"Roche",           c:"CH", w:"Top 3"},
+    {t:"ABBN.SW", n:"ABB",             c:"CH", w:"Top 4"},
+    {t:"ZURN.SW", n:"Zurich Insurance",c:"CH", w:"Top 5"},
+    {t:"UBSG.SW", n:"UBS",             c:"CH", w:"Top 6"},
+    {t:"LONN.SW", n:"Lonza",           c:"CH", w:"Top 7"},
+    {t:"PGHN.SW", n:"Partners Group",  c:"CH", w:"Top 8"},
+    {t:"SIKA.SW", n:"Sika",            c:"CH", w:"Top 9"},
+    {t:"LISP.SW", n:"Lindt & Sprüngli",c:"CH", w:"Top 10"},
+  ]},
+  asiapac: { label:"🌏 Asien-Pazifik", stocks:[
+    {t:"TSM",      n:"Taiwan Semi",    c:"TW", w:"~0.98%"},
+    {t:"005930.KS",n:"Samsung",        c:"KR", w:"~0.60%"},
+    {t:"7203.T",   n:"Toyota",         c:"JP", w:"~0.45%"},
+    {t:"9984.T",   n:"SoftBank",       c:"JP", w:"~0.42%"},
+    {t:"6758.T",   n:"Sony",           c:"JP", w:"~0.35%"},
+    {t:"BHP",      n:"BHP Group",      c:"AU", w:"~0.33%"},
+    {t:"6861.T",   n:"Keyence",        c:"JP", w:"~0.30%"},
+    {t:"RIO",      n:"Rio Tinto",      c:"AU", w:"~0.25%"},
+    {t:"CBA.AX",   n:"Commonwealth Bk",c:"AU", w:"~0.24%"},
+    {t:"9988.HK",  n:"Alibaba HK",     c:"HK", w:"~0.22%"},
+  ]},
+  emerging: { label:"🌐 Emerging", stocks:[
+    {t:"TCEHY",      n:"Tencent",       c:"CN", w:"~1.13%"},
+    {t:"BABA",       n:"Alibaba",       c:"CN", w:"~0.55%"},
+    {t:"RELIANCE.NS",n:"Reliance",      c:"IN", w:"~0.40%"},
+    {t:"PDD",        n:"PDD Holdings",  c:"CN", w:"~0.38%"},
+    {t:"INFY",       n:"Infosys",       c:"IN", w:"~0.35%"},
+    {t:"VALE",       n:"Vale",          c:"BR", w:"~0.28%"},
+    {t:"TCS.NS",     n:"Tata Consult.", c:"IN", w:"~0.27%"},
+    {t:"MELI",       n:"MercadoLibre",  c:"AR", w:"~0.25%"},
+    {t:"ITUB",       n:"Itaú Unibanco", c:"BR", w:"~0.22%"},
+    {t:"IBN",        n:"ICICI Bank",    c:"IN", w:"~0.20%"},
+  ]},
+  hidden: { label:"🏆 Hidden Champions", stocks:[
+    {t:"RAA.DE",  n:"Rational AG",   c:"DE", w:"DACH"},
+    {t:"MRHN.DE", n:"Hermle",        c:"DE", w:"DACH"},
+    {t:"JEN.DE",  n:"Jenoptik",      c:"DE", w:"DACH"},
+    {t:"BC8.DE",  n:"Bechtle",       c:"DE", w:"DACH"},
+    {t:"SMHN.DE", n:"Süss MicroTec", c:"DE", w:"DACH"},
+    {t:"POST.VI", n:"Österr. Post",  c:"AT", w:"DACH"},
+    {t:"STMN.SW", n:"Straumann",     c:"CH", w:"DACH"},
+    {t:"ASML",    n:"ASML",          c:"NL", w:"Welt"},
+    {t:"DHR",     n:"Danaher",       c:"USA",w:"Welt"},
+    {t:"6861.T",  n:"Keyence",       c:"JP", w:"Welt"},
+  ]},
+  moat: { label:"🏰 Burggraben 52W", stocks:[
+    {t:"PG",   n:"Procter & Gamble",  c:"USA", m:"Konsumgüter"},
+    {t:"PLTR", n:"Palantir",          c:"USA", m:"KI/Data"},
+    {t:"MSFT", n:"Microsoft",         c:"USA", m:"Cloud/OS"},
+    {t:"META", n:"Meta",              c:"USA", m:"Social"},
+    {t:"PEP",  n:"PepsiCo",           c:"USA", m:"Konsumgüter"},
+    {t:"ZTS",  n:"Zoetis",            c:"USA", m:"Tiergesundheit"},
+    {t:"MELI", n:"MercadoLibre",      c:"AR",  m:"LatAm E-Commerce"},
+    {t:"SE",   n:"Sea Limited",       c:"SG",  m:"SEA Digital"},
+    {t:"UBER", n:"Uber",              c:"USA", m:"Mobility"},
+    {t:"NFLX", n:"Netflix",           c:"USA", m:"Streaming"},
+    {t:"MA",   n:"Mastercard",        c:"USA", m:"Payments"},
+    {t:"NVO",  n:"Novo Nordisk",      c:"DK",  m:"Pharma/GLP-1"},
+    {t:"V",    n:"Visa",              c:"USA", m:"Payments"},
+    {t:"BKNG", n:"Booking Holdings",  c:"USA", m:"Travel/OTA"},
+    {t:"COST", n:"Costco",            c:"USA", m:"Membership Retail"},
+  ]},
+};
+
+const TAB_ORDER = ["depot","usa","europe","swiss","asiapac","emerging","hidden","moat"];
+let activeTab = "depot";
+let stockData = {};
+let fearGreedValue = 50;
+let lastUpdated = null;
+
+function getZone(v) { return FEAR_ZONES.find(z => v >= z.min && v <= z.max) || FEAR_ZONES[2]; }
+
+function calcScore(d) {
+  if (!d) return 0;
+  let s = 0;
+  if (d.low52 && d.high52 && d.price) {
+    const range = d.high52 - d.low52;
+    const pct = range > 0 ? ((d.price - d.low52) / range) * 100 : 50;
+    s += Math.max(0, 50 - pct * 0.5);
+  }
+  if (d.rsi) s += Math.max(0, 30 - d.rsi * 0.3);
+  if (d.change && d.change < 0) s += Math.min(20, Math.abs(d.change) * 4);
+  return Math.round(s);
+}
+
+function calcSignal(rsi, fg) {
+  if (fg <= 25 && rsi < 40) return "KAUFEN";
+  if (fg <= 35 && rsi < 45) return "BEOBACHTEN";
+  if (fg >= 75 && rsi > 65) return "VERKAUFEN";
+  if (fg >= 60 && rsi > 60) return "TEILVERKAUF";
+  return "WARTEN";
+}
+
+async function fetchFearGreed() {
+  const res = await fetch("https://api.alternative.me/fng/?limit=2&format=json");
+  const data = await res.json();
+  return { value: parseInt(data.data[0].value), label: data.data[0].value_classification, previousClose: parseInt(data.data[1].value) };
+}
+
+async function fetchYahoo(ticker) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    const json = await res.json();
+    const parsed = JSON.parse(json.contents);
+    const meta = parsed?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+    const price = meta.regularMarketPrice;
+    const prev = meta.chartPreviousClose || meta.previousClose;
+    const change = prev ? ((price - prev) / prev) * 100 : null;
+    let rsi = null;
+    if (meta.fiftyTwoWeekLow && meta.fiftyTwoWeekHigh) {
+      const range = meta.fiftyTwoWeekHigh - meta.fiftyTwoWeekLow;
+      const pos = range > 0 ? ((price - meta.fiftyTwoWeekLow) / range) * 100 : 50;
+      rsi = Math.round(20 + pos * 0.6);
+    }
+    return { price, change, low52: meta.fiftyTwoWeekLow, high52: meta.fiftyTwoWeekHigh, rsi };
+  } catch { return null; }
+}
+
+async function fetchFuture(ticker) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    const json = await res.json();
+    const parsed = JSON.parse(json.contents);
+    const meta = parsed?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+    const buy = meta.regularMarketPrice;
+    const sell = parseFloat((buy * 0.9998).toFixed(1));
+    const prev = meta.chartPreviousClose;
+    const change = prev ? parseFloat((buy - prev).toFixed(1)) : 0;
+    const changePct = prev ? parseFloat(((buy - prev) / prev * 100).toFixed(2)) : 0;
+    return { sell, buy: parseFloat(buy.toFixed(1)), change, changePct, high: meta.regularMarketDayHigh, low: meta.regularMarketDayLow };
+  } catch { return null; }
+}
+
+function renderGauge(value) {
+  const toRad = d => (d * Math.PI) / 180;
+  const arcs = [{color:"#ef4444",s:180,e:144},{color:"#f97316",s:144,e:108},{color:"#eab308",s:108,e:72},{color:"#84cc16",s:72,e:36},{color:"#22c55e",s:36,e:0}];
+  const angle = -90 + (value / 100) * 180;
+  const R=80,r=55,cx=100,cy=100;
+  const paths = arcs.map(({color,s,e}) => {
+    const x1=cx+R*Math.cos(toRad(s)),y1=cy-R*Math.sin(toRad(s)),x2=cx+R*Math.cos(toRad(e)),y2=cy-R*Math.sin(toRad(e));
+    const xi1=cx+r*Math.cos(toRad(s)),yi1=cy-r*Math.sin(toRad(s)),xi2=cx+r*Math.cos(toRad(e)),yi2=cy-r*Math.sin(toRad(e));
+    return `<path d="M${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} L${xi2} ${yi2} A${r} ${r} 0 0 0 ${xi1} ${yi1}Z" fill="${color}" opacity="0.85"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 200 110" style="width:100%;max-width:260px;margin:0 auto">${paths}
+    <g transform="rotate(${-angle} 100 100)"><line x1="100" y1="100" x2="100" y2="26" stroke="white" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="white"/></g>
+    <text x="14" y="108" fill="#ef4444" font-size="8" font-weight="bold">FEAR</text><text x="152" y="108" fill="#22c55e" font-size="8" font-weight="bold">GREED</text></svg>`;
+}
+
+function renderFG(fg) {
+  const zone = getZone(fg.value);
+  document.getElementById('fgCard').style.border = `1px solid ${zone.color}44`;
+  document.getElementById('fgCard').innerHTML = `${renderGauge(fg.value)}
+    <div class="fg-value">
+      <div class="fg-number" style="color:${zone.color}">${fg.value}</div>
+      <div class="fg-label" style="color:${zone.color}">${zone.label}</div>
+      ${fg.previousClose ? `<div class="fg-prev">Gestern: ${fg.previousClose}</div>` : ''}
+    </div>
+    <div class="fg-action" style="background:${zone.color}18;border:1px solid ${zone.color}44">
+      <span style="font-size:20px">${zone.emoji}</span>
+      <div><div class="fg-action-sub">Dein Signal heute</div><div class="fg-action-label" style="color:${zone.color}">${zone.action}</div></div>
+    </div>`;
+}
+
+function renderWeekend(wData) {
+  const isWE = [0,6].includes(new Date().getDay());
+  document.getElementById('weekendLabel').innerHTML = `Weekend Index ${isWE ? '<span style="color:#22c55e">● LIVE</span>' : '<span style="color:#334155">(Wochentag)</span>'}`;
+  const items = [{key:"nasdaq",label:"Nasdaq 100 Future"},{key:"dax",label:"DAX 40 Future"},{key:"gold",label:"Gold"},{key:"oil",label:"WTI Crude Oil"}];
+  document.getElementById('weekendGrid').innerHTML = items.map(({key,label}) => {
+    const d = wData?.[key]; const pos = d ? d.changePct >= 0 : true;
+    return `<div class="weekend-card" style="border-color:${isWE?(pos?'#22c55e44':'#ef444444'):'#252d40'};opacity:${isWE?1:0.55}">
+      <div class="weekend-title">${label}</div>
+      ${d ? `<div class="weekend-prices">
+        <div class="weekend-price-box weekend-sell"><div class="weekend-price-label">SELL</div><div class="weekend-price-val">${d.sell?.toLocaleString('de-DE')??'–'}</div></div>
+        <div class="weekend-price-box weekend-buy"><div class="weekend-price-label">BUY</div><div class="weekend-price-val">${d.buy?.toLocaleString('de-DE')??'–'}</div></div>
+      </div>
+      <div class="weekend-change" style="color:${pos?'#22c55e':'#ef4444'}">${pos?'+':''}${d.change?.toFixed(1)} (${pos?'+':''}${d.changePct?.toFixed(2)}%)</div>
+      <div class="weekend-hl">H: ${d.high?.toLocaleString('de-DE')??'–'} · L: ${d.low?.toLocaleString('de-DE')??'–'}</div>`
+      : '<div class="placeholder">Keine Daten</div>'}</div>`;
+  }).join('');
+}
+
+function renderTabs() {
+  document.getElementById('tabsRow').innerHTML = TAB_ORDER.map(key => {
+    const isMoat = key==='moat', isDepot = key==='depot', isActive = activeTab===key;
+    const bg = isActive ? (isMoat?'#f97316':isDepot?'#8b5cf6':'#6366f1') : '#1a1f2e';
+    const bc = isActive ? (isMoat?'#f97316':isDepot?'#8b5cf6':'#6366f1') : '#252d40';
+    return `<button class="tab-btn${isActive?' active':''}${isActive&&isMoat?' moat':''}${isActive&&isDepot?' depot':''}"
+      style="background:${bg};border-color:${bc};color:${isActive?'#fff':'#64748b'};font-weight:${isActive?700:500}"
+      onclick="switchTab('${key}')">${REGIONS[key].label}</button>`;
+  }).join('');
+}
+
+function renderStocks() {
+  const isMoat = activeTab==='moat', isDepot = activeTab==='depot';
+  document.getElementById('moatHeader').style.display  = isMoat  ? 'block' : 'none';
+  document.getElementById('depotHeader').style.display = isDepot ? 'block' : 'none';
+  document.getElementById('moatLegend').style.display  = isMoat  ? 'block' : 'none';
+
+  let stocks = [...REGIONS[activeTab].stocks];
+  if (isMoat) stocks = stocks.sort((a,b) => calcScore(stockData[b.t])-calcScore(stockData[a.t])).slice(0,10);
+
+  const buyCount  = stocks.filter(s => stockData[s.t]?.signal==='KAUFEN').length;
+  const sellCount = stocks.filter(s => ['VERKAUFEN','TEILVERKAUF'].includes(stockData[s.t]?.signal)).length;
+  const neutCount = stocks.length - buyCount - sellCount;
+
+  const sb = document.getElementById('summaryBar');
+  sb.style.display = 'flex';
+  sb.innerHTML = [
+    {count:buyCount, label:'Kaufsignale', color:'#22c55e'},
+    {count:neutCount,label:'Neutral',     color:'#eab308'},
+    {count:sellCount,label:'Verkaufsign.',color:'#ef4444'},
+  ].map(({count,label,color}) => `<div class="summary-item" style="background:${color}18;border:1px solid ${color}33">
+    <div class="summary-count" style="color:${color}">${count}</div><div class="summary-label">${label}</div></div>`).join('');
+
+  document.getElementById('stockList').innerHTML = stocks.map((s,i) => {
+    const d = stockData[s.t]; const sig = d?.signal||'WARTEN'; const sc = SIG_COLORS[sig];
+    const score = isMoat ? calcScore(d) : null;
+    const distPct = (d?.price&&d?.low52) ? (((d.price-d.low52)/d.low52)*100).toFixed(1) : null;
+    const borderClass = sig==='KAUFEN'?'buy-signal':sig==='VERKAUFEN'?'sell-signal':(isMoat&&score>60?'hot-score':'');
+    return `<div class="stock-card ${borderClass}">
+      <div class="stock-row">
+        <div>
+          <div class="stock-meta">${isMoat?`<span class="stock-rank">#${i+1}</span>`:''} ${s.t} · ${s.c} · ${s.m||s.w||''}</div>
+          <div class="stock-name">${s.n}</div>
+          ${d?.price?`<div class="stock-price">$${d.price.toFixed(2)}</div>`:''}
+        </div>
+        <div class="stock-right">
+          ${d?.change!==undefined?`<div class="stock-change ${d.change>=0?'pos':'neg'}">${d.change>=0?'+':''}${d.change?.toFixed(2)}%</div>`:''}
+          <div class="stock-signal" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${sig}</div>
+          ${isMoat&&score!==null?`<div class="stock-score" style="color:${score>60?'#f97316':score>40?'#eab308':'#475569'}">Score: ${score}</div>`:''}
+        </div>
+      </div>
+      ${(d?.rsi||distPct)?`<div class="stock-indicators">
+        ${d?.rsi?`<span>RSI <span class="${d.rsi>70?'rsi-high':d.rsi<30?'rsi-low':'rsi-mid'}">${d.rsi}</span></span>`:''}
+        ${distPct?`<span>+${distPct}% ü. 52W↓</span>`:''}
+        ${d?.low52?`<span>↓$${d.low52}</span>`:''}
+        ${d?.high52?`<span>↑$${d.high52}</span>`:''}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function switchTab(key) { activeTab=key; renderTabs(); renderStocks(); }
+
+async function fetchAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  document.getElementById('fgCard').innerHTML = '<div class="loading-msg">Lade Daten…</div>';
+  try {
+    const fg = await fetchFearGreed();
+    fearGreedValue = fg.value;
+    renderFG(fg);
+    const [nasdaq,dax,gold,oil] = await Promise.all([fetchFuture("NQ=F"),fetchFuture("FDAX=F"),fetchFuture("GC=F"),fetchFuture("CL=F")]);
+    renderWeekend({nasdaq,dax,gold,oil});
+    const allStocks = Object.values(REGIONS).flatMap(r=>r.stocks);
+    const unique = [...new Map(allStocks.map(s=>[s.t,s])).values()];
+    const BATCH=5;
+    for (let i=0;i<unique.length;i+=BATCH) {
+      const batch=unique.slice(i,i+BATCH);
+      const results=await Promise.all(batch.map(s=>fetchYahoo(s.t)));
+      results.forEach((d,j)=>{ if(d){d.signal=calcSignal(d.rsi||50,fearGreedValue);stockData[batch[j].t]=d;} });
+      renderStocks();
+      if(i+BATCH<unique.length) await new Promise(r=>setTimeout(r,300));
+    }
+    lastUpdated=new Date();
+    document.getElementById('timestamp').textContent=`Zuletzt aktualisiert: ${lastUpdated.toLocaleTimeString('de-DE')}`;
+  } catch(e) {
+    document.getElementById('fgCard').innerHTML='<div class="error-msg">Laden fehlgeschlagen – Verbindung prüfen und ↻ tippen.</div>';
+  } finally { btn.disabled=false; }
+}
+
+renderTabs(); renderStocks(); fetchAll();
+</script>
+</body>
+</html>
